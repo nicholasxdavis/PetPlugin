@@ -1,0 +1,10 @@
+com\playpandora\petplugin\managers\PetManager.class
+com\playpandora\petplugin\storage\DataManager.class
+com\playpandora\petplugin\PetPlugin.class
+com\playpandora\petplugin\listeners\PetListener.class
+com\playpandora\petplugin\managers\PetManager$2.class
+com\playpandora\petplugin\managers\PurchaseManager.class
+com\playpandora\petplugin\commands\PetCommand.class
+com\playpandora\petplugin\gui\PetShopGUI.class
+com\playpandora\petplugin\managers\PetManager$1.class
+com\playpandora\petplugin\models\Pet.class
