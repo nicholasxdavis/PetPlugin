@@ -1,95 +1,113 @@
 <td style="text-align: center;">
 
-<img src="https://nicholasxdavis.github.io/BN-db1/img/PhotoshopExtension_Image.png" width="600" height="300" alt="PandoraEnchants Banner" />
+<img src="https://nicholasxdavis.github.io/BN-db1/img/PhotoshopExtension_Image.png" width="600" height="300" alt="PetPlugin Banner" />
 
-PandoraEnchants 1.0.0
+PetPlugin 1.0.0 
 
 Private Release by PandoraPlugins by Blacnova
 
-<br />
+<br />  
 
 <a href="#"> <img src="https://img.shields.io/badge/Version-1.0.0-skyblue?style=for-the-badge" alt="Current Version"> </a>
 
 <br /><hr />
 
-About PandoraEnchants
+About PetPlugin
 
-PandoraEnchants is a comprehensive custom enchantment plugin designed for Factions servers running Spigot/Paper 1.21. It introduces a unique "One Enchant Per Item" mechanic to maintain strict PvP balance while offering powerful abilities. The plugin features a robust system of over 50 custom enchantments, "God Sets" that bypass limitations, and full integration with vanilla Enchanting Tables and Anvils.
+PetPlugin is a feature-rich pet management system for Spigot/Paper 1.21 servers. It offers a user-friendly GUI shop where players can purchase various pets with unique abilities, stats, and requirements. Pets act as loyal companions, providing buffs, combat support, and utility features. The plugin integrates with Vault for economy and supports LevelPlugin for level-based unlocking.
 
 Key Features
 
-Balanced Gameplay: Enforces a strict limit of one custom enchantment per item to prevent power creep.
+GUI Pet Shop: A clean, navigable interface (/pet) to browse and purchase pets.
 
-Unique Enchantments: Includes powerful effects like Lifesteal, Rage, Vein Miner, Lumberjack, Double Jump, and more.
+Unique Pet Types: Includes Horses (Mounts), Dogs (Guardians), Cats (Extra Lives), Wolves (Combat), Parrots (Utility), and Foxes (Stealth).
 
-God Sets: Special pre-configured armor sets (Iron, Diamond, Netherite) that bypass the one-enchant restriction, allowing for ultimate "God" gear.
+Special Abilities: Pets provide passive buffs to their owners:
 
-GUI Editor: A live preview editor (/pe editor) to view and manage enchantments directly in-game.
+Cat: Speed boost and saves the owner from death (Extra Lives).
 
-Vanilla Integration:
+Parrot: Grants permanent Night Vision.
 
-Enchanting Table: Custom enchants can be obtained naturally through the enchanting table.
+Fox: Grants Invisibility when the owner sneaks.
 
-Anvil Support: Combine custom enchanted items and books with configurable costs.
+Smart AI & Mechanics:
 
-Visual Effects: High-quality particle effects and sounds for immersive combat and mining.
+Auto-Heal: Pets regenerate health over time.
 
-Smart Mechanics:
+Safety: Pets flee when low on health to avoid death.
 
-Vein Miner & Lumberjack: Break entire veins of ore or trees instantly.
+Teleportation: Pets automatically teleport to catch up with their owner.
 
-Double Jump: Launch into the air with special boots.
+Revive System: If a pet dies, players have a configurable window (default 6 hours) to revive them for a fee.
 
-Auto Smelt & Telekinesis: Automatically smelt ores and send drops directly to inventory.
+Progression: Lock powerful pets behind player levels (requires LevelPlugin).
 
 </td>
 
 <br /><hr />
 
-Commands
-/pe add <enchant> [level] | Adds a specific custom enchantment to the held item.
+# Commands
 
-/pe remove | Removes the custom enchantment from the held item.
+/pet,/pets | Opens the Pet Shop GUI to buy new pets.
 
-/pe info <enchant> | View detailed information, rarity, and stats of an enchantment.
+/pet list | "View a list of your active, stored, and dead pets."
 
-/pe list [page] | Lists all available custom enchantments.
+/pet spawn <type> | Spawns a specific pet type you own.
 
-/pe book <enchant> [level] | Spawns a custom enchanted book.
+/pet despawn | Despawns your currently active pet.
 
-/pe godset <tier> | Spawns a full God Set (Iron, Diamond, or Netherite).
+/pet rename <old> <new> | Renames a pet (uses the generated name).
 
-/pe godkit give <player> <tier> | Gives a specific God Set to a player.
+/pet release <name> | Permanently releases a pet.
 
-/pe editor | Opens the GUI Editor with live preview.
+/pet revive <name> | Revives a dead pet (within time limit).
 
-/pe reload | Reloads the plugin configuration.
+# Dependencies
 
-Dependencies
-To run PandoraEnchants, your server requires the following:
+To run PetPlugin, your server requires the following:
 
 Java 21 or higher.
 
 Spigot/Paper 1.21 or compatible fork.
 
+Vault (Required for purchasing and reviving pets).
+
+LevelPlugin (Optional, for level-based purchase requirements).
+
 Configuration
 
-The plugin is highly configurable via config.yml and enchantments.yml. You can adjust enchantment weights, costs, effects, and the "one enchant" rule logic.
+The plugin is highly configurable via config.yml. You can adjust pet stats, abilities, prices, and system mechanics.
 
-Example Enchantment Configuration
-From enchantments.yml
-lifesteal: enabled: true display_name: "&7Lifesteal" description: "&7Heals you when you damage enemies" definition: max_level: 5 needs_permission: false anvil_cost: 15 supported: - weapon enchanting_table: weight: 1 min_cost_base: 12 max_cost_base: 26
+# Example Pet Configuration
+pet-types:
+  cat:
+    enabled: true
+    name: "&6Lucky Cat"
+    price: 20000.0
+    required-level: 35
+    # Cat stats
+    max-health: 20.0
+    speed-boost-level: 1
+    extra-lives: 1
+    
+  fox:
+    enabled: true
+    name: "&6Fox"
+    price: 8000.0
+    # Fox stats
+    max-health: 20.0
+    invisibility-on-sneak: true
 
-vein_miner: enabled: true display_name: "&7Vein Miner" description: "&7Breaks connected blocks of the same type" definition: max_level: 5 supported: - tool enchanting_table: weight: 15 min_cost_base: 6
 
-License
+# License
+
 Copyright © 2025 Blacnova Development
 
 This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 
-This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
 
-You should have received a copy of the GNU General Public License along with this program. If not, see https://www.gnu.org/licenses/.
+You should have received a copy of the GNU General Public License along with this program.  If not, see https://www.gnu.org/licenses/.
 
 <br /><hr />
 
