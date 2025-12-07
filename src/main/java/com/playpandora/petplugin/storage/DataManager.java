@@ -4,6 +4,7 @@ import com.playpandora.petplugin.PetPlugin;
 import com.playpandora.petplugin.models.Pet;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.scheduler.BukkitTask;
 
 import java.io.File;
 import java.io.IOException;
@@ -16,10 +17,13 @@ public class DataManager {
     private FileConfiguration dataConfig;
     private final Map<UUID, List<Pet>> playerPets = new HashMap<>();
     private final Map<UUID, List<Pet>> deadPets = new HashMap<>(); // Player UUID -> Dead Pets
+    private BukkitTask autoSaveTask;
+    private boolean needsSave = false;
     
     public DataManager(PetPlugin plugin) {
         this.plugin = plugin;
         loadData();
+        startAutoSave();
     }
     
     public void loadData() {
@@ -39,35 +43,75 @@ public class DataManager {
         // Load player pets
         if (dataConfig.contains("pets")) {
             for (String uuidString : dataConfig.getConfigurationSection("pets").getKeys(false)) {
-                UUID uuid = UUID.fromString(uuidString);
-                List<Pet> pets = new ArrayList<>();
-                
-                for (String petKey : dataConfig.getConfigurationSection("pets." + uuidString).getKeys(false)) {
-                    String path = "pets." + uuidString + "." + petKey;
-                    String petType = dataConfig.getString(path + ".type");
-                    String generatedName = dataConfig.getString(path + ".generatedName");
-                    String customName = dataConfig.getString(path + ".customName");
-                    Long deathTimestamp = dataConfig.contains(path + ".deathTimestamp") ? 
-                        dataConfig.getLong(path + ".deathTimestamp") : null;
+                try {
+                    UUID uuid = UUID.fromString(uuidString);
+                    List<Pet> pets = new ArrayList<>();
                     
-                    Pet pet = new Pet(uuid, petType, generatedName);
-                    if (customName != null) {
-                        pet.setCustomName(customName);
+                    for (String petKey : dataConfig.getConfigurationSection("pets." + uuidString).getKeys(false)) {
+                        String path = "pets." + uuidString + "." + petKey;
+                        String petType = dataConfig.getString(path + ".type");
+                        String generatedName = dataConfig.getString(path + ".generatedName");
+                        String customName = dataConfig.getString(path + ".customName");
+                        Long deathTimestamp = dataConfig.contains(path + ".deathTimestamp") ? 
+                            dataConfig.getLong(path + ".deathTimestamp") : null;
+                        Double maxHealth = dataConfig.contains(path + ".maxHealth") ?
+                            dataConfig.getDouble(path + ".maxHealth") : null;
+                        Double currentHealth = dataConfig.contains(path + ".currentHealth") ?
+                            dataConfig.getDouble(path + ".currentHealth") : null;
+                        
+                        Pet pet = new Pet(uuid, petType, generatedName);
+                        if (customName != null) {
+                            pet.setCustomName(customName);
+                        }
+                        if (maxHealth != null) {
+                            pet.setMaxHealth(maxHealth);
+                        }
+                        if (currentHealth != null) {
+                            pet.setCurrentHealth(currentHealth);
+                        }
+                        if (deathTimestamp != null) {
+                            pet.setDeathTimestamp(deathTimestamp);
+                            deadPets.computeIfAbsent(uuid, k -> new ArrayList<>()).add(pet);
+                        } else {
+                            pets.add(pet);
+                        }
                     }
-                    if (deathTimestamp != null) {
-                        pet.setDeathTimestamp(deathTimestamp);
-                        deadPets.computeIfAbsent(uuid, k -> new ArrayList<>()).add(pet);
-                    } else {
-                        pets.add(pet);
-                    }
+                    
+                    playerPets.put(uuid, pets);
+                } catch (IllegalArgumentException e) {
+                    plugin.getLogger().warning("Invalid UUID in data.yml: " + uuidString);
                 }
-                
-                playerPets.put(uuid, pets);
             }
         }
+        
+        plugin.getLogger().info("Loaded data for " + playerPets.size() + " players with pets");
+    }
+    
+    private void startAutoSave() {
+        // Auto-save every 60 seconds (1200 ticks)
+        autoSaveTask = plugin.getServer().getScheduler().runTaskTimerAsynchronously(plugin, () -> {
+            if (needsSave) {
+                saveDataSync();
+                needsSave = false;
+            }
+        }, 1200L, 1200L); // Every 60 seconds
+        
+        plugin.getLogger().info("Auto-save enabled (every 60 seconds)");
     }
     
     public void saveData() {
+        // Mark as needing save and trigger immediate save
+        needsSave = true;
+        saveDataSync();
+    }
+    
+    private void saveDataSync() {
+        // Ensure we're on the main thread for file operations
+        if (!plugin.getServer().isPrimaryThread()) {
+            plugin.getServer().getScheduler().runTask(plugin, this::saveDataSync);
+            return;
+        }
+        
         if (dataConfig == null || dataFile == null) {
             return;
         }
@@ -88,6 +132,8 @@ public class DataManager {
                 if (pet.getCustomName() != null) {
                     dataConfig.set(path + ".customName", pet.getCustomName());
                 }
+                dataConfig.set(path + ".maxHealth", pet.getMaxHealth());
+                dataConfig.set(path + ".currentHealth", pet.getCurrentHealth());
                 if (pet.getDeathTimestamp() != null) {
                     dataConfig.set(path + ".deathTimestamp", pet.getDeathTimestamp());
                 }
@@ -109,6 +155,8 @@ public class DataManager {
                 if (pet.getCustomName() != null) {
                     dataConfig.set(path + ".customName", pet.getCustomName());
                 }
+                dataConfig.set(path + ".maxHealth", pet.getMaxHealth());
+                dataConfig.set(path + ".currentHealth", pet.getCurrentHealth());
                 if (pet.getDeathTimestamp() != null) {
                     dataConfig.set(path + ".deathTimestamp", pet.getDeathTimestamp());
                 }
@@ -117,14 +165,17 @@ public class DataManager {
         
         try {
             dataConfig.save(dataFile);
+            plugin.getLogger().fine("Data saved successfully");
         } catch (IOException e) {
             plugin.getLogger().severe("Failed to save data.yml: " + e.getMessage());
+            e.printStackTrace();
         }
     }
     
     public void addPet(UUID uuid, Pet pet) {
         playerPets.computeIfAbsent(uuid, k -> new ArrayList<>()).add(pet);
-        saveData();
+        needsSave = true;
+        saveData(); // Immediate save for important operations
     }
     
     public List<Pet> getPlayerPets(UUID uuid) {
@@ -161,7 +212,8 @@ public class DataManager {
             playerPets.remove(uuid);
             deadPets.remove(uuid);
         }
-        saveData();
+        needsSave = true;
+        saveData(); // Immediate save for important operations
     }
     
     public void markPetAsDead(UUID uuid, Pet pet) {
@@ -173,7 +225,8 @@ public class DataManager {
         pet.setDeathTimestamp(System.currentTimeMillis());
         deadPets.computeIfAbsent(uuid, k -> new ArrayList<>()).add(pet);
         
-        saveData();
+        needsSave = true;
+        saveData(); // Immediate save for important operations
     }
     
     public List<Pet> getDeadPets(UUID uuid) {
@@ -203,7 +256,24 @@ public class DataManager {
         pet.revive();
         playerPets.computeIfAbsent(uuid, k -> new ArrayList<>()).add(pet);
         
-        saveData();
+        needsSave = true;
+        saveData(); // Immediate save for important operations
+    }
+    
+    public void updatePetHealth(UUID uuid, Pet pet) {
+        // Update pet health in memory (will be saved on next auto-save or explicit save)
+        needsSave = true;
+    }
+    
+    public void close() {
+        // Cancel auto-save task
+        if (autoSaveTask != null) {
+            autoSaveTask.cancel();
+        }
+        
+        // Final save of all data
+        saveDataSync();
+        plugin.getLogger().info("All data saved on plugin disable");
     }
 }
 

@@ -68,14 +68,14 @@ public class PetPlugin extends JavaPlugin {
     @Override
     public void onDisable() {
         try {
-            // Despawn all pets
+            // Despawn all pets (health is already saved during monitoring)
             if (petManager != null) {
                 petManager.despawnAllPets();
             }
             
-            // Save data
+            // Close data manager (saves all data and cancels auto-save)
             if (dataManager != null) {
-                dataManager.saveData();
+                dataManager.close();
             }
             
             // Cancel all tasks

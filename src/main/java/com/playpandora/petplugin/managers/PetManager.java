@@ -51,6 +51,11 @@ public class PetManager {
                 continue;
             }
             
+            // Update pet health in data model
+            pet.setCurrentHealth(entity.getHealth());
+            pet.setMaxHealth(entity.getMaxHealth());
+            plugin.getDataManager().updatePetHealth(playerUUID, pet);
+            
             double healthPercent = entity.getHealth() / entity.getMaxHealth();
             
             if (healthPercent <= threshold) {
@@ -63,7 +68,11 @@ public class PetManager {
     private void healPets() {
         double healRate = plugin.getConfig().getDouble("pets.auto-heal-rate", 0.5);
         
-        for (LivingEntity entity : petEntities.values()) {
+        for (Map.Entry<UUID, Pet> entry : activePets.entrySet()) {
+            UUID playerUUID = entry.getKey();
+            Pet pet = entry.getValue();
+            LivingEntity entity = petEntities.get(pet.getEntityUUID());
+            
             if (entity != null && !entity.isDead()) {
                 double currentHealth = entity.getHealth();
                 double maxHealth = entity.getMaxHealth();
@@ -71,6 +80,13 @@ public class PetManager {
                 if (currentHealth < maxHealth) {
                     entity.setHealth(Math.min(maxHealth, currentHealth + healRate));
                 }
+                
+                // Update pet health in data model
+                pet.setCurrentHealth(entity.getHealth());
+                pet.setMaxHealth(maxHealth);
+                
+                // Mark for save (will be saved on next auto-save)
+                plugin.getDataManager().updatePetHealth(playerUUID, pet);
             }
         }
     }
